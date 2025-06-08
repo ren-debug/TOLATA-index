@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PDF Viewer</title>
+  <link rel="stylesheet" href="css/styles.css" />
+
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+    }
+
+    #controls {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      padding: 10px;
+      border-bottom: 1px solid #ccc;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      z-index: 999;
+    }
+
+    canvas {
+      display: block;
+      margin: 90px auto 20px;
+      border: 1px solid #ccc;
+    }
+
+    .highlight-box {
+      background-color: yellow;
+      opacity: 0.4;
+      position: absolute;
+      border: 1px dashed #ccc;
+      pointer-events: auto;
+      cursor: pointer;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+
+
+</head>
+
+<body>
+  <div id="sidebar">
+    <h3>Sections</h3>
+    <ul id="toc-list">
+      <li><a data-page="1" href="#">Section 1</a></li>
+      <li><a data-page="2" href="#">Section 2</a></li>
+      <li><a data-page="3" href="#">Section 3</a></li>
+    </ul>
+  </div>
+  <div id="viewer-container">
+    <div id="controls">
+      <button id="prev">Previous</button><button id="zoom-in">Zoom In</button><button id="zoom-out">Zoom Out</button>
+      <button id="next">Next</button>
+      <button id="print-pdf">Print PDF</button>
+      <span>Page: <span id="page-num">1</span> / <span id="page-count">1</span></span>
+    </div>
+    <canvas id="pdfViewer"></canvas>
+    <div id="highlight-layer" style="position:absolute; top:90px; left:0; right:0; pointer-events:none;"></div>
+    <div id="notes-container" style="position:fixed; right:10px; top:100px; background:#fff; padding:10px; border:1px solid #ccc; max-width:200px; z-index:1000;"></div>
+  </div>
+
+<script>
+  let pdfDoc = null,
+      currentPage = 1,
+      currentScale = 1.2,
+      canvas = document.getElementById('pdfViewer'),
+      ctx = canvas.getContext('2d');
+
+function renderPage(num) {
+  pdfDoc.getPage(num).then(page => {
+    const outputScale = window.devicePixelRatio || 2;
+    const viewport = page.getViewport({ scale: currentScale });
+
+    canvas.width = Math.floor(viewport.width * outputScale);
+    canvas.height = Math.floor(viewport.height * outputScale);
+    canvas.style.width = `${viewport.width}px`;
+    canvas.style.height = `${viewport.height}px`;
+
+    const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null;
+
+    const renderContext = {
+      canvasContext: ctx,
+      viewport: viewport,
+      transform: transform,
+    };
+
+    page.render(renderContext).promise.then(() => {
+      document.getElementById('page-num').textContent = num;
+      document.getElementById('page-count').textContent = pdfDoc.numPages;
+    });
+  });
+}
+
+function queueRenderPage(num) {
+  if (num >= 1 && num <= pdfDoc.numPages) {
+    currentPage = num;
+    renderPage(num);
+  }
+}
+
+document.getElementById('prev').addEventListener('click', () => {
+  if (currentPage > 1) {
+    queueRenderPage(--currentPage);
+  }
+});
+
+document.getElementById('next').addEventListener('click', () => {
+  if (currentPage < pdfDoc.numPages) {
+    queueRenderPage(++currentPage);
+  }
+});
+
+document.getElementById('zoom-in').addEventListener('click', () => {
+  currentScale = Math.min(currentScale + 0.25, 3);
+  renderPage(currentPage);
+});
+
+document.getElementById('zoom-out').addEventListener('click', () => {
+  currentScale = Math.max(currentScale - 0.25, 0.5);
+  renderPage(currentPage);
+});
+
+document.getElementById('print-pdf').addEventListener('click', () => {
+  const dataUrl = canvas.toDataURL();
+  const w = window.open();
+  w.document.write(`<html><head><title>Print PDF</title></head><body><img src="${dataUrl}" style="width:100%"></body></html>`);
+  w.document.close();
+  w.focus();
+  w.print();
+  w.close();
+});
+
+document.querySelectorAll('#toc-list a').forEach(link => {
+  link.addEventListener('click', function (e) {
+    e.preventDefault();
+    const page = parseInt(this.dataset.page, 10);
+    if (!isNaN(page)) queueRenderPage(page);
+  });
+});
+
+function loadPdf(path) {
+  pdfjsLib.getDocument(path).promise.then(pdf => {
+    pdfDoc = pdf;
+    currentPage = 1;
+    document.getElementById('page-count').textContent = pdf.numPages;
+    renderPage(currentPage);
+  });
+}
+
+const pdfPath = new URLSearchParams(window.location.search).get("file");
+if (pdfPath) {
+  loadPdf(pdfPath);
+}
+
+window.addEventListener('message', (event) => {
+  if (event.data?.type === 'load-pdf' && event.data.path) {
+    loadPdf(event.data.path);
+  }
+});
+
+canvas.addEventListener('mouseup', function (e) {
+  const selection = window.getSelection();
+  const selectedText = selection.toString().trim();
+  if (selectedText) {
+    const note = prompt("Add a note for this highlight:", "");
+    if (note !== null) {
+      addHighlight(note);
+    }
+    selection.removeAllRanges();
+  }
+});
+
+function addHighlight(noteText) {
+  const span = document.createElement("span");
+  span.className = "highlight-box";
+  span.style.top = `${Math.random() * canvas.clientHeight}px`;
+  span.style.left = `${Math.random() * canvas.clientWidth}px`;
+  span.style.width = '80px';
+  span.style.height = '20px';
+
+  span.title = noteText;
+
+  span.addEventListener("click", () => {
+    alert("Note: " + noteText);
+  });
+
+  document.getElementById("highlight-layer").appendChild(span);
+
+  const noteEntry = document.createElement("div");
+  noteEntry.textContent = noteText;
+  document.getElementById("notes-container").appendChild(noteEntry);
+}
+</script>
+
+</body>
+</html>
