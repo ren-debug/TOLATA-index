@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>C. Reports</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js"></script>
+  <style>
+    .nav-menu {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin: 10px 0 20px;
+      padding: 0;
+      list-style: none;
+    }
+
+    .nav-menu a {
+      text-decoration: none;
+      color: #007BFF;
+      font-weight: bold;
+    }
+
+    .nav-menu a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <button><a href="index.html">Index</a></button>
+  <h1>CPR Part 8 Under TOLATA Act</h1>
+
+  <nav class="nav-menu">
+    <a href="index-a.html">A. Court Documents and Applications</a>
+    <a href="index-b.html">B. Witness Evidence</a>
+    <a href="index-c.html">C. Expert Reports / Valuations</a>
+    <a href="index-d.html">D. Correspondence</a>
+
+
+  </nav>
+
+  <div class="table-controls">
+    <label for="category-select">Filter by category: </label>
+    <select id="category-select" onchange="filterCategory()">
+      <option value="All">All</option>
+      <option value="Family Law">Family Law</option>
+      <option value="Health Impact">Health Impact</option>
+      <option value="Criminal Law">Criminal Law</option>
+    </select>
+  </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th class="sortable" data-column="exhibitNo">Exhibit No<span class="sort-icon">↕</span></th>
+          <th class="sortable" data-column="category">Category<span class="sort-icon">↕</span></th>
+          <th class="sortable" data-column="type">Type<span class="sort-icon">↕</span></th>
+          <th class="sortable" data-column="description">Description<span class="sort-icon">↕</span></th>
+          <th class="sortable" data-column="date">Date<span class="sort-icon">↕</span></th>
+          <th class="sortable" data-column="author">Author<span class="sort-icon">↕</span></th>
+          <th class="sortable" data-column="section">Section<span class="sort-icon">↕</span></th>
+          <th class="sortable" data-column="media">Media<span class="sort-icon">↕</span></th>
+          <th>View</th>
+          <th>Download</th>
+        </tr>
+      </thead>
+      <tbody id="table-body">
+      </tbody>
+    </table>
+     <div style="text-align: right; margin-top: 10px;">
+      <button id="prev-page-btn" onclick="goToPrevPage()">← Prev</button>
+      <span id="pagination-info">Page 1</span>
+      <button id="next-page-btn" onclick="goToNextPage()">Next →</button>
+    </div>
+  </div>
+
+    <div class="pdf-reader-container">
+      <button id="open-in-tab">Open Viewer in New Tab</button>
+      <canvas id="pdfViewer"></canvas>
+      <div id="pdf-navigation" style="margin-top: 10px;">
+        <button id="prev-page">Previous</button>
+        <span id="page-num">1</span> / <span id="page-count">1</span>
+        <button id="next-page">Next</button>
+      </div>
+    </div>
+</body>
+  <script src="data/data-c.js"></script>
+  <script src="js/script.js"></script>
+  <script src="js/viewer.js"></script>
+</html>
