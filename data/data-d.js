@@ -436,9 +436,17 @@
       category: "Correspondence",
       type: "Direct Party Communications",
       media: "PDF",
-      date: "",
-      author: "",
+      date: "2025-06-06",
+      author: "Chiara Longo",
       description: "WP Letter",
+    },
+        {
+      category: "Correspondence",
+      type: "Direct Party Communications",
+      media: "PDF",
+      date: "2025-06-08",
+      author: "The Defendant",
+      description: "WP Letter re:estate agents/order",
     },
 
   ];
